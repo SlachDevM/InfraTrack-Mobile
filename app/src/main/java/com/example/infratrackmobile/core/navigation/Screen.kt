@@ -4,10 +4,10 @@ import kotlinx.serialization.Serializable
 
 sealed interface Screen {
     @Serializable
-    data object Home : Screen
+    data object Login : Screen
 
     @Serializable
-    data object Login : Screen
+    data object Profile : Screen
 
     @Serializable
     data object InspectionList : Screen

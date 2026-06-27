@@ -1,0 +1,64 @@
+package com.example.infratrackmobile.features.inspection.presentation.screen
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.infratrackmobile.features.inspection.presentation.component.AssignedInspectionCard
+import com.example.infratrackmobile.features.inspection.presentation.viewmodel.AssignedInspectionsViewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AssignedInspectionsScreen(
+    viewModel: AssignedInspectionsViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("Assigned Inspections") })
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            if (uiState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else if (uiState.errorMessage != null) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center).padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = uiState.errorMessage!!, color = MaterialTheme.colorScheme.error)
+                    Button(onClick = viewModel::loadInspections) {
+                        Text("Retry")
+                    }
+                }
+            } else if (uiState.inspections.isEmpty()) {
+                Text(
+                    text = "No inspections assigned.",
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(uiState.inspections) { inspection ->
+                        AssignedInspectionCard(inspection = inspection)
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,5 +1,6 @@
 package com.example.infratrackmobile.core.di
 
+import com.example.infratrackmobile.BuildConfig
 import com.example.infratrackmobile.core.security.AuthInterceptor
 import dagger.Module
 import dagger.Provides
@@ -39,7 +40,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.example.com/") // Placeholder
+            .baseUrl(BuildConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()

@@ -20,6 +20,8 @@ import com.example.infratrackmobile.core.ui.placeholder.PlaceholderScreen
 import com.example.infratrackmobile.core.ui.theme.InfraTrackMobileTheme
 import com.example.infratrackmobile.features.auth.domain.usecase.ObserveSessionUseCase
 import com.example.infratrackmobile.features.auth.presentation.screen.LoginScreen
+import com.example.infratrackmobile.features.auth.presentation.screen.ProfileScreen
+import com.example.infratrackmobile.features.inspection.presentation.screen.AssignedInspectionsScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -55,12 +57,12 @@ fun AppNavHost(
 
     LaunchedEffect(session) {
         if (session != null) {
-            navController.navigate(Screen.Home) {
-                popUpTo(Screen.Login) { inclusive = true }
+            navController.navigate(Screen.InspectionList) {
+                popUpTo(Screen.InspectionList) { inclusive = true }
             }
         } else {
             navController.navigate(Screen.Login) {
-                popUpTo(Screen.Home) { inclusive = true }
+                popUpTo(Screen.Login) { inclusive = true }
             }
         }
     }
@@ -73,17 +75,17 @@ fun AppNavHost(
         composable<Screen.Login> {
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate(Screen.Home) {
+                    navController.navigate(Screen.InspectionList) {
                         popUpTo(Screen.Login) { inclusive = true }
                     }
                 }
             )
         }
-        composable<Screen.Home> {
-            PlaceholderScreen("Home")
+        composable<Screen.Profile> {
+            ProfileScreen()
         }
         composable<Screen.InspectionList> {
-            PlaceholderScreen("Inspection List")
+            AssignedInspectionsScreen()
         }
         composable<Screen.WorkOrderList> {
             PlaceholderScreen("Work Order List")

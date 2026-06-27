@@ -7,7 +7,9 @@ import com.example.infratrackmobile.core.security.SessionManager
 import com.example.infratrackmobile.core.security.model.LocalSession
 import com.example.infratrackmobile.features.auth.data.remote.api.AuthApi
 import com.example.infratrackmobile.features.auth.data.remote.dto.LoginRequestDto
+import com.example.infratrackmobile.features.auth.data.remote.dto.UserProfileDto
 import com.example.infratrackmobile.features.auth.domain.model.AuthSession
+import com.example.infratrackmobile.features.auth.domain.model.CurrentUser
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -42,6 +44,19 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getCurrentUser(): Result<CurrentUser> {
+        return try {
+            val dto = authApi.getCurrentUser()
+            Result.Success(dto.toDomain())
+        } catch (e: Exception) {
+            val error = e.toNetworkError()
+            if (error is NetworkError.Unauthorized) {
+                sessionManager.clearSession()
+            }
+            Result.Error(error)
+        }
+    }
+
     override suspend fun logout(): Result<Unit> {
         return try {
             sessionManager.clearSession()
@@ -64,4 +79,13 @@ private fun LocalSession.toAuthSession() = AuthSession(
     userId = userId,
     email = email,
     role = role
+)
+
+private fun UserProfileDto.toDomain() = CurrentUser(
+    id = id,
+    name = name,
+    email = email,
+    role = role,
+    departmentId = departmentId,
+    departmentName = departmentName
 )

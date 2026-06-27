@@ -1,5 +1,6 @@
 package com.example.infratrackmobile.core.network
 
+import retrofit2.HttpException
 import java.io.IOException
 
 sealed class NetworkError : Throwable() {
@@ -12,7 +13,13 @@ sealed class NetworkError : Throwable() {
 fun Throwable.toNetworkError(): NetworkError {
     return when (this) {
         is IOException -> NetworkError.NoInternet
-        // More specific mapping can be added here once Retrofit response handling is implemented
+        is HttpException -> {
+            when (this.code()) {
+                401 -> NetworkError.Unauthorized
+                500 -> NetworkError.ServerError
+                else -> NetworkError.Unknown("HTTP ${this.code()}")
+            }
+        }
         else -> NetworkError.Unknown(this.message)
     }
 }
