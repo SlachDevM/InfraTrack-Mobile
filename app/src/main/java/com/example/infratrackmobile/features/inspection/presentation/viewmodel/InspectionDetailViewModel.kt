@@ -6,7 +6,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.infratrackmobile.core.common.Result
 import com.example.infratrackmobile.core.navigation.Screen
+import com.example.infratrackmobile.features.inspection.domain.model.InspectionAnswerInput
+import com.example.infratrackmobile.features.inspection.domain.model.PhysicalCondition
+import com.example.infratrackmobile.features.inspection.domain.usecase.CompleteInspectionUseCase
 import com.example.infratrackmobile.features.inspection.domain.usecase.GetInspectionBundleUseCase
+import com.example.infratrackmobile.features.inspection.domain.usecase.SaveInspectionAnswersUseCase
 import com.example.infratrackmobile.features.inspection.presentation.state.InspectionDetailUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +22,8 @@ import javax.inject.Inject
 @HiltViewModel
 class InspectionDetailViewModel @Inject constructor(
     private val getInspectionBundleUseCase: GetInspectionBundleUseCase,
+    private val saveInspectionAnswersUseCase: SaveInspectionAnswersUseCase,
+    private val completeInspectionUseCase: CompleteInspectionUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -25,9 +31,8 @@ class InspectionDetailViewModel @Inject constructor(
     val uiState: StateFlow<InspectionDetailUiState> = _uiState.asStateFlow()
 
     private val inspectionId: Long = try {
-        // Accessing inspectionId from navigation route
         savedStateHandle.toRoute<Screen.InspectionDetail>().id.toLong()
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         -1L
     }
 
@@ -45,9 +50,23 @@ class InspectionDetailViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             when (val result = getInspectionBundleUseCase(inspectionId)) {
                 is Result.Success -> {
+                    val bundle = result.data
+                    val initialAnswers = bundle.answers.associate { answer ->
+                        answer.questionId to InspectionAnswerInput(
+                            questionId = answer.questionId,
+                            booleanValue = answer.booleanValue,
+                            numberValue = answer.numberValue,
+                            textValue = answer.textValue,
+                            choiceCodeValue = answer.choiceCodeValue
+                        )
+                    }
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        bundle = result.data,
+                        bundle = bundle,
+                        editableAnswers = initialAnswers,
+                        observedCondition = bundle.inspection.observedCondition?.let { PhysicalCondition.valueOf(it) },
+                        observations = bundle.inspection.observations ?: "",
+                        issueIdentified = bundle.inspection.issueIdentified,
                         errorMessage = null
                     )
                 }
@@ -57,10 +76,128 @@ class InspectionDetailViewModel @Inject constructor(
                         errorMessage = result.exception.message ?: "Failed to load inspection details"
                     )
                 }
-                is Result.Loading -> {
-                    // Handled above
-                }
+                is Result.Loading -> {}
             }
         }
+    }
+
+    fun updateBooleanAnswer(questionId: Long, value: Boolean) {
+        val currentAnswers = _uiState.value.editableAnswers.toMutableMap()
+        currentAnswers[questionId] = InspectionAnswerInput(questionId = questionId, booleanValue = value)
+        _uiState.value = _uiState.value.copy(editableAnswers = currentAnswers)
+    }
+
+    fun updateTextAnswer(questionId: Long, value: String) {
+        val currentAnswers = _uiState.value.editableAnswers.toMutableMap()
+        currentAnswers[questionId] = InspectionAnswerInput(questionId = questionId, textValue = value)
+        _uiState.value = _uiState.value.copy(editableAnswers = currentAnswers)
+    }
+
+    fun updateNumberAnswer(questionId: Long, value: String) {
+        val numberValue = value.toDoubleOrNull()
+        val currentAnswers = _uiState.value.editableAnswers.toMutableMap()
+        currentAnswers[questionId] = InspectionAnswerInput(questionId = questionId, numberValue = numberValue)
+        _uiState.value = _uiState.value.copy(editableAnswers = currentAnswers)
+    }
+
+    fun updateChoiceAnswer(questionId: Long, choiceCode: String) {
+        val currentAnswers = _uiState.value.editableAnswers.toMutableMap()
+        currentAnswers[questionId] = InspectionAnswerInput(questionId = questionId, choiceCodeValue = choiceCode)
+        _uiState.value = _uiState.value.copy(editableAnswers = currentAnswers)
+    }
+
+    fun updateObservedCondition(condition: PhysicalCondition) {
+        _uiState.value = _uiState.value.copy(observedCondition = condition)
+    }
+
+    fun updateObservations(observations: String) {
+        _uiState.value = _uiState.value.copy(observations = observations)
+    }
+
+    fun updateIssueIdentified(issueIdentified: Boolean) {
+        _uiState.value = _uiState.value.copy(issueIdentified = issueIdentified)
+    }
+
+    fun showCompletionDialog() {
+        _uiState.value = _uiState.value.copy(showCompletionDialog = true)
+    }
+
+    fun hideCompletionDialog() {
+        _uiState.value = _uiState.value.copy(showCompletionDialog = false)
+    }
+
+    fun completeInspection() {
+        val condition = _uiState.value.observedCondition
+        val observations = _uiState.value.observations
+        
+        if (condition == null) {
+            _uiState.value = _uiState.value.copy(
+                showCompletionDialog = false,
+                errorMessage = "Physical condition is required"
+            )
+            return
+        }
+
+        if (observations.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                showCompletionDialog = false,
+                errorMessage = "Observations are required"
+            )
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isCompleting = true, 
+                errorMessage = null, 
+                showCompletionDialog = false
+            )
+            
+            val answers = _uiState.value.editableAnswers.values.toList()
+            val result = completeInspectionUseCase(
+                inspectionId = inspectionId,
+                observedCondition = condition,
+                observations = observations,
+                issueIdentified = _uiState.value.issueIdentified,
+                answers = answers
+            )
+
+            when (result) {
+                is Result.Success -> {
+                    _uiState.value = _uiState.value.copy(isCompleting = false, completeSuccess = true)
+                }
+                is Result.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isCompleting = false,
+                        errorMessage = result.exception.message ?: "Failed to complete inspection"
+                    )
+                }
+                is Result.Loading -> {}
+            }
+        }
+    }
+
+    fun saveAnswers() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSaving = true, errorMessage = null, saveSuccess = false)
+            val answers = _uiState.value.editableAnswers.values.toList()
+            when (val result = saveInspectionAnswersUseCase(inspectionId, answers)) {
+                is Result.Success -> {
+                    _uiState.value = _uiState.value.copy(isSaving = false, saveSuccess = true)
+                    loadBundle() // Refresh to sync server state
+                }
+                is Result.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false,
+                        errorMessage = result.exception.message ?: "Failed to save answers"
+                    )
+                }
+                is Result.Loading -> {}
+            }
+        }
+    }
+
+    fun clearSaveSuccess() {
+        _uiState.value = _uiState.value.copy(saveSuccess = false)
     }
 }

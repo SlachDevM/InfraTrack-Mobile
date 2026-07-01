@@ -32,7 +32,7 @@ class StartupViewModel @Inject constructor(
             if (session == null) {
                 _uiState.value = StartupUiState.NoSession
             } else {
-                when (val result = getCurrentUserUseCase()) {
+                when (getCurrentUserUseCase()) {
                     is Result.Success -> _uiState.value = StartupUiState.Authenticated
                     is Result.Error -> {
                         // If it's 401 or 403, the repository already cleared the session

@@ -17,6 +17,7 @@ import com.example.infratrackmobile.features.dashboard.presentation.viewmodel.Da
 @Composable
 fun DashboardScreen(
     onAssignedInspectionsClick: () -> Unit,
+    onAssignedWorkOrdersClick: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -62,7 +63,11 @@ fun DashboardScreen(
                                 count = dashboard.assignedInspections,
                                 onClick = onAssignedInspectionsClick
                             )
-                            DashboardCounterCard("Assigned Work Orders", dashboard.assignedWorkOrders)
+                            DashboardCounterCard(
+                                label = "Assigned Work Orders",
+                                count = dashboard.assignedWorkOrders,
+                                onClick = onAssignedWorkOrdersClick
+                            )
                             DashboardCounterCard("Overdue Inspections", dashboard.overdueInspections, isCritical = true)
                             DashboardCounterCard("Overdue Work Orders", dashboard.overdueWorkOrders, isCritical = true)
                             DashboardCounterCard("Completed Today", dashboard.completedToday)

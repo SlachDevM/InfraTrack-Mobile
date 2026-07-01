@@ -23,6 +23,9 @@ sealed interface Screen {
 
     @Serializable
     data object WorkOrderList : Screen
+
+    @Serializable
+    data class WorkOrderDetail(val id: String) : Screen
     
     @Serializable
     data object SyncStatus : Screen

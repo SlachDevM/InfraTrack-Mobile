@@ -5,6 +5,8 @@ import com.example.infratrackmobile.core.network.toNetworkError
 import com.example.infratrackmobile.features.inspection.data.remote.api.InspectionApi
 import com.example.infratrackmobile.features.inspection.data.remote.dto.*
 import com.example.infratrackmobile.features.inspection.domain.model.*
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class InspectionRepositoryImpl @Inject constructor(
@@ -28,7 +30,50 @@ class InspectionRepositoryImpl @Inject constructor(
             Result.Error(e.toNetworkError())
         }
     }
+
+    override suspend fun saveAnswers(inspectionId: Long, answers: List<InspectionAnswerInput>): Result<Unit> {
+        return try {
+            val request = SaveInspectionAnswersRequestDto(
+                answers = answers.map { it.toDto() }
+            )
+            inspectionApi.saveAnswers(inspectionId, request)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(e.toNetworkError())
+        }
+    }
+
+    override suspend fun completeInspection(
+        inspectionId: Long,
+        observedCondition: PhysicalCondition,
+        observations: String,
+        issueIdentified: Boolean,
+        completedAt: LocalDateTime,
+        answers: List<InspectionAnswerInput>
+    ): Result<Unit> {
+        return try {
+            val request = CompleteInspectionRequestDto(
+                observedCondition = observedCondition.name,
+                observations = observations,
+                issueIdentified = issueIdentified,
+                completedAt = completedAt.format(DateTimeFormatter.ISO_DATE_TIME),
+                answers = answers.map { it.toDto() }
+            )
+            inspectionApi.completeInspection(inspectionId, request)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(e.toNetworkError())
+        }
+    }
 }
+
+private fun InspectionAnswerInput.toDto() = InspectionAnswerRequestDto(
+    questionId = questionId,
+    booleanValue = booleanValue,
+    numberValue = numberValue,
+    textValue = textValue,
+    choiceCodeValue = choiceCodeValue
+)
 
 private fun InspectionDto.toDomain() = AssignedInspection(
     inspectionId = inspectionId,

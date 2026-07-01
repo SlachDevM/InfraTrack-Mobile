@@ -2,9 +2,21 @@ package com.example.infratrackmobile.features.inspection.data.repository
 
 import com.example.infratrackmobile.core.common.Result
 import com.example.infratrackmobile.features.inspection.domain.model.AssignedInspection
+import com.example.infratrackmobile.features.inspection.domain.model.InspectionAnswerInput
 import com.example.infratrackmobile.features.inspection.domain.model.InspectionBundle
+import com.example.infratrackmobile.features.inspection.domain.model.PhysicalCondition
+import java.time.LocalDateTime
 
 interface InspectionRepository {
     suspend fun getAssignedInspections(): Result<List<AssignedInspection>>
     suspend fun getInspectionBundle(inspectionId: Long): Result<InspectionBundle>
+    suspend fun saveAnswers(inspectionId: Long, answers: List<InspectionAnswerInput>): Result<Unit>
+    suspend fun completeInspection(
+        inspectionId: Long,
+        observedCondition: PhysicalCondition,
+        observations: String,
+        issueIdentified: Boolean,
+        completedAt: LocalDateTime,
+        answers: List<InspectionAnswerInput>
+    ): Result<Unit>
 }

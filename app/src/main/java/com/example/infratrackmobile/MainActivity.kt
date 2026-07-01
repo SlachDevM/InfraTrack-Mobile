@@ -25,6 +25,8 @@ import com.example.infratrackmobile.features.auth.presentation.screen.StartupScr
 import com.example.infratrackmobile.features.dashboard.presentation.screen.DashboardScreen
 import com.example.infratrackmobile.features.inspection.presentation.screen.AssignedInspectionsScreen
 import com.example.infratrackmobile.features.inspection.presentation.screen.InspectionDetailScreen
+import com.example.infratrackmobile.features.workorder.presentation.screen.WorkOrderDetailScreen
+import com.example.infratrackmobile.features.workorder.presentation.screen.WorkOrderListScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -99,6 +101,9 @@ fun AppNavHost(
             DashboardScreen(
                 onAssignedInspectionsClick = {
                     navController.navigate(Screen.InspectionList)
+                },
+                onAssignedWorkOrdersClick = {
+                    navController.navigate(Screen.WorkOrderList)
                 }
             )
         }
@@ -123,7 +128,21 @@ fun AppNavHost(
             )
         }
         composable<Screen.WorkOrderList> {
-            PlaceholderScreen("Work Order List")
+            WorkOrderListScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onWorkOrderClick = { workOrderId ->
+                    navController.navigate(Screen.WorkOrderDetail(id = workOrderId.toString()))
+                }
+            )
+        }
+        composable<Screen.WorkOrderDetail> {
+            WorkOrderDetailScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
         }
         composable<Screen.SyncStatus> {
             PlaceholderScreen("Sync Status")
