@@ -6,6 +6,7 @@ import java.io.IOException
 sealed class NetworkError : Throwable() {
     data object NoInternet : NetworkError()
     data object Unauthorized : NetworkError()
+    data object Forbidden : NetworkError()
     data object ServerError : NetworkError()
     data class Unknown(val errorMessage: String?) : NetworkError()
 }
@@ -16,6 +17,7 @@ fun Throwable.toNetworkError(): NetworkError {
         is HttpException -> {
             when (this.code()) {
                 401 -> NetworkError.Unauthorized
+                403 -> NetworkError.Forbidden
                 500 -> NetworkError.ServerError
                 else -> NetworkError.Unknown("HTTP ${this.code()}")
             }

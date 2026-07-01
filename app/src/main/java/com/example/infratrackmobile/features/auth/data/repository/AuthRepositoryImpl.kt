@@ -50,7 +50,7 @@ class AuthRepositoryImpl @Inject constructor(
             Result.Success(dto.toDomain())
         } catch (e: Exception) {
             val error = e.toNetworkError()
-            if (error is NetworkError.Unauthorized) {
+            if (error is NetworkError.Unauthorized || error is NetworkError.Forbidden) {
                 sessionManager.clearSession()
             }
             Result.Error(error)

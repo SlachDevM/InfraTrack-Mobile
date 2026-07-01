@@ -1,6 +1,9 @@
-package com.example.infratrackmobile.features.inspection.domain.model
+package com.example.infratrackmobile.features.inspection.data.remote.dto
 
-data class AssignedInspection(
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class InspectionDto(
     val inspectionId: Long,
     val assetId: Long,
     val assetName: String,
@@ -8,6 +11,7 @@ data class AssignedInspection(
     val status: String,
     val priority: String,
     val expectedCompletionDate: String,
+    val templateId: Long,
     val templateName: String,
     val hasChecklist: Boolean,
     val issueIdentified: Boolean

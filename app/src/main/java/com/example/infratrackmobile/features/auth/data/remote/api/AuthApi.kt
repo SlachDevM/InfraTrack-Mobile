@@ -12,6 +12,6 @@ interface AuthApi {
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequestDto): LoginResponseDto
 
-    @GET("api/users/me")
+    @GET("api/mobile/me")
     suspend fun getCurrentUser(): UserProfileDto
 }

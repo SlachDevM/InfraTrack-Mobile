@@ -21,7 +21,10 @@ import com.example.infratrackmobile.core.ui.theme.InfraTrackMobileTheme
 import com.example.infratrackmobile.features.auth.domain.usecase.ObserveSessionUseCase
 import com.example.infratrackmobile.features.auth.presentation.screen.LoginScreen
 import com.example.infratrackmobile.features.auth.presentation.screen.ProfileScreen
+import com.example.infratrackmobile.features.auth.presentation.screen.StartupScreen
+import com.example.infratrackmobile.features.dashboard.presentation.screen.DashboardScreen
 import com.example.infratrackmobile.features.inspection.presentation.screen.AssignedInspectionsScreen
+import com.example.infratrackmobile.features.inspection.presentation.screen.InspectionDetailScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -56,28 +59,46 @@ fun AppNavHost(
     val session by observeSessionUseCase().collectAsState(initial = null)
 
     LaunchedEffect(session) {
-        if (session != null) {
-            navController.navigate(Screen.InspectionList) {
-                popUpTo(Screen.InspectionList) { inclusive = true }
-            }
-        } else {
+        // If we are on an authenticated screen and session becomes null, go to Login
+        if (session == null && navController.currentDestination?.route != Screen.Login::class.qualifiedName) {
             navController.navigate(Screen.Login) {
-                popUpTo(Screen.Login) { inclusive = true }
+                popUpTo(0) { inclusive = true }
             }
         }
     }
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Login,
+        startDestination = Screen.Startup,
         modifier = modifier
     ) {
+        composable<Screen.Startup> {
+            StartupScreen(
+                onAuthenticated = {
+                    navController.navigate(Screen.Dashboard) {
+                        popUpTo(Screen.Startup) { inclusive = true }
+                    }
+                },
+                onNoSession = {
+                    navController.navigate(Screen.Login) {
+                        popUpTo(Screen.Startup) { inclusive = true }
+                    }
+                }
+            )
+        }
         composable<Screen.Login> {
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate(Screen.InspectionList) {
+                    navController.navigate(Screen.Dashboard) {
                         popUpTo(Screen.Login) { inclusive = true }
                     }
+                }
+            )
+        }
+        composable<Screen.Dashboard> {
+            DashboardScreen(
+                onAssignedInspectionsClick = {
+                    navController.navigate(Screen.InspectionList)
                 }
             )
         }
@@ -85,7 +106,21 @@ fun AppNavHost(
             ProfileScreen()
         }
         composable<Screen.InspectionList> {
-            AssignedInspectionsScreen()
+            AssignedInspectionsScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onInspectionClick = { inspectionId ->
+                    navController.navigate(Screen.InspectionDetail(id = inspectionId.toString()))
+                }
+            )
+        }
+        composable<Screen.InspectionDetail> {
+            InspectionDetailScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
         }
         composable<Screen.WorkOrderList> {
             PlaceholderScreen("Work Order List")
