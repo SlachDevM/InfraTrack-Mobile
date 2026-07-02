@@ -5,9 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -23,6 +21,30 @@ fun WorkOrderDetailScreen(
     viewModel: WorkOrderDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(uiState.completeSuccess) {
+        if (uiState.completeSuccess) {
+            onBackClick()
+        }
+    }
+
+    if (uiState.showCompletionDialog) {
+        AlertDialog(
+            onDismissRequest = viewModel::hideCompletionDialog,
+            title = { Text("Complete Maintenance") },
+            text = { Text("Are you sure you want to record this maintenance as completed? This action is final.") },
+            confirmButton = {
+                TextButton(onClick = viewModel::completeMaintenance) {
+                    Text("Complete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::hideCompletionDialog) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -41,24 +63,30 @@ fun WorkOrderDetailScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (uiState.isLoading) {
+            if (uiState.isLoading && uiState.bundle == null) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (uiState.errorMessage != null) {
+            } else if (uiState.errorMessage != null && uiState.bundle == null) {
                 Column(
                     modifier = Modifier
                         .align(Alignment.Center)
                         .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(text = uiState.errorMessage!!, color = MaterialTheme.colorScheme.error)
-                    Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = viewModel::loadBundle) {
                         Text("Retry")
                     }
                 }
             } else {
                 uiState.bundle?.let { bundle ->
-                    WorkOrderBundleContent(bundle = bundle)
+                    WorkOrderBundleContent(
+                        bundle = bundle,
+                        completionNotes = uiState.completionNotes,
+                        isCompleting = uiState.isCompleting,
+                        onNotesChange = viewModel::updateCompletionNotes,
+                        onCompleteClick = viewModel::showCompletionDialog
+                    )
                 }
             }
         }
@@ -66,7 +94,13 @@ fun WorkOrderDetailScreen(
 }
 
 @Composable
-private fun WorkOrderBundleContent(bundle: WorkOrderBundle) {
+private fun WorkOrderBundleContent(
+    bundle: WorkOrderBundle,
+    completionNotes: String,
+    isCompleting: Boolean,
+    onNotesChange: (String) -> Unit,
+    onCompleteClick: () -> Unit
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -98,12 +132,21 @@ private fun WorkOrderBundleContent(bundle: WorkOrderBundle) {
 
         item {
             SectionHeader("Maintenance Activity")
-            MaintenanceActivitySection(bundle.maintenanceActivity)
+            MaintenanceActivitySection(
+                activity = bundle.maintenanceActivity,
+                completionNotes = completionNotes,
+                onNotesChange = onNotesChange,
+                canComplete = bundle.allowedActions.canCompleteMaintenance
+            )
         }
 
         item {
             SectionHeader("Actions")
-            AllowedActionsSection(bundle.allowedActions)
+            AllowedActionsSection(
+                allowedActions = bundle.allowedActions,
+                isCompleting = isCompleting,
+                onCompleteClick = onCompleteClick
+            )
         }
     }
 }
@@ -162,7 +205,12 @@ private fun DecisionSummarySection(decision: WorkOrderDecisionSummary) {
 }
 
 @Composable
-private fun MaintenanceActivitySection(activity: WorkOrderMaintenanceActivitySummary?) {
+private fun MaintenanceActivitySection(
+    activity: WorkOrderMaintenanceActivitySummary?,
+    completionNotes: String,
+    onNotesChange: (String) -> Unit,
+    canComplete: Boolean
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (activity != null) {
@@ -171,17 +219,40 @@ private fun MaintenanceActivitySection(activity: WorkOrderMaintenanceActivitySum
                 Text(text = "Completed At: ${activity.completedAt ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
             } else {
                 Text(text = "No maintenance activity recorded.", style = MaterialTheme.typography.bodyMedium)
+                
+                if (canComplete) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = completionNotes,
+                        onValueChange = onNotesChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Completion Notes *") },
+                        minLines = 3
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun AllowedActionsSection(allowedActions: WorkOrderAllowedActions) {
+private fun AllowedActionsSection(
+    allowedActions: WorkOrderAllowedActions,
+    isCompleting: Boolean,
+    onCompleteClick: () -> Unit
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (allowedActions.canCompleteMaintenance) {
-            Button(onClick = { /* TODO */ }, modifier = Modifier.fillMaxWidth(), enabled = false) {
-                Text("Complete Maintenance (Planned)")
+            Button(
+                onClick = onCompleteClick, 
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isCompleting
+            ) {
+                if (isCompleting) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                } else {
+                    Text("Complete Maintenance")
+                }
             }
         }
         if (allowedActions.canUploadDocument) {

@@ -87,5 +87,6 @@ private fun UserProfileDto.toDomain() = CurrentUser(
     email = email,
     role = role,
     departmentId = departmentId,
-    departmentName = departmentName
+    departmentName = departmentName,
+    enabled = enabled
 )

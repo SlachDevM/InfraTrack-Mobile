@@ -44,15 +44,22 @@ class ProfileViewModel @Inject constructor(
                         isConnected = false
                     )
                 }
-                is Result.Loading -> {
-                    // Handled above
-                }
+                is Result.Loading -> {}
             }
         }
     }
 
+    fun showLogoutDialog() {
+        _uiState.value = _uiState.value.copy(showLogoutDialog = true)
+    }
+
+    fun hideLogoutDialog() {
+        _uiState.value = _uiState.value.copy(showLogoutDialog = false)
+    }
+
     fun logout() {
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(showLogoutDialog = false)
             logoutUseCase()
         }
     }

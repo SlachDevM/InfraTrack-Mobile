@@ -104,11 +104,18 @@ fun AppNavHost(
                 },
                 onAssignedWorkOrdersClick = {
                     navController.navigate(Screen.WorkOrderList)
+                },
+                onProfileClick = {
+                    navController.navigate(Screen.Profile)
                 }
             )
         }
         composable<Screen.Profile> {
-            ProfileScreen()
+            ProfileScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
         }
         composable<Screen.InspectionList> {
             AssignedInspectionsScreen(

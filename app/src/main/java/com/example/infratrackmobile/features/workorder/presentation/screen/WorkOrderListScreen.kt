@@ -60,10 +60,9 @@ fun WorkOrderListScreen(
                         }
                     }
                 } else if (uiState.workOrders.isEmpty()) {
-                    Text(
-                        text = "No work orders assigned.",
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = "No work orders assigned.")
+                    }
                 } else {
                 LazyColumn(
                     contentPadding = PaddingValues(16.dp),

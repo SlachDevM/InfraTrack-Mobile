@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.infratrackmobile.core.common.Result
 import com.example.infratrackmobile.core.navigation.Screen
+import com.example.infratrackmobile.features.workorder.domain.usecase.CompleteMaintenanceUseCase
 import com.example.infratrackmobile.features.workorder.domain.usecase.GetWorkOrderBundleUseCase
 import com.example.infratrackmobile.features.workorder.presentation.state.WorkOrderDetailUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,6 +19,7 @@ import javax.inject.Inject
 @HiltViewModel
 class WorkOrderDetailViewModel @Inject constructor(
     private val getWorkOrderBundleUseCase: GetWorkOrderBundleUseCase,
+    private val completeMaintenanceUseCase: CompleteMaintenanceUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -25,9 +27,6 @@ class WorkOrderDetailViewModel @Inject constructor(
     val uiState: StateFlow<WorkOrderDetailUiState> = _uiState.asStateFlow()
 
     private val workOrderId: Long = try {
-        // Accessing workOrderId from navigation route (assuming Screen.WorkOrderDetail exists or similar)
-        // Let's check Screen.kt first or use a placeholder name.
-        // The user mentioned WorkOrderDetail(workOrderId) navigation.
         savedStateHandle.toRoute<Screen.WorkOrderDetail>().id.toLong()
     } catch (_: Exception) {
         -1L
@@ -57,6 +56,54 @@ class WorkOrderDetailViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         errorMessage = result.exception.message ?: "Failed to load work order details"
+                    )
+                }
+                is Result.Loading -> {}
+            }
+        }
+    }
+
+    fun updateCompletionNotes(notes: String) {
+        _uiState.value = _uiState.value.copy(completionNotes = notes)
+    }
+
+    fun showCompletionDialog() {
+        _uiState.value = _uiState.value.copy(showCompletionDialog = true)
+    }
+
+    fun hideCompletionDialog() {
+        _uiState.value = _uiState.value.copy(showCompletionDialog = false)
+    }
+
+    fun completeMaintenance() {
+        if (_uiState.value.completionNotes.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                showCompletionDialog = false,
+                errorMessage = "Completion notes are required"
+            )
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isCompleting = true, 
+                errorMessage = null, 
+                showCompletionDialog = false
+            )
+            
+            val result = completeMaintenanceUseCase(
+                workOrderId = workOrderId,
+                notes = _uiState.value.completionNotes
+            )
+
+            when (result) {
+                is Result.Success -> {
+                    _uiState.value = _uiState.value.copy(isCompleting = false, completeSuccess = true)
+                }
+                is Result.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isCompleting = false,
+                        errorMessage = result.exception.message ?: "Failed to complete maintenance"
                     )
                 }
                 is Result.Loading -> {}

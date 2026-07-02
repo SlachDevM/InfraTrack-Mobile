@@ -3,6 +3,8 @@ package com.example.infratrackmobile.features.dashboard.presentation.screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -18,13 +20,21 @@ import com.example.infratrackmobile.features.dashboard.presentation.viewmodel.Da
 fun DashboardScreen(
     onAssignedInspectionsClick: () -> Unit,
     onAssignedWorkOrdersClick: () -> Unit,
+    onProfileClick: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Mobile Dashboard") })
+            TopAppBar(
+                title = { Text("Mobile Dashboard") },
+                actions = {
+                    IconButton(onClick = onProfileClick) {
+                        Icon(Icons.Default.AccountCircle, contentDescription = "Profile")
+                    }
+                }
+            )
         }
     ) { paddingValues ->
         Box(

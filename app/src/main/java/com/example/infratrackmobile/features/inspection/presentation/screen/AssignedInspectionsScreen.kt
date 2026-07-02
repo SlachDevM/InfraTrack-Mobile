@@ -60,10 +60,9 @@ fun AssignedInspectionsScreen(
                         }
                     }
                 } else if (uiState.inspections.isEmpty()) {
-                    Text(
-                        text = "No inspections assigned.",
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = "No inspections assigned.")
+                    }
                 } else {
                 LazyColumn(
                     contentPadding = PaddingValues(16.dp),

@@ -82,10 +82,10 @@ fun InspectionDetailScreen(
                     modifier = Modifier
                         .align(Alignment.Center)
                         .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(text = uiState.errorMessage!!, color = MaterialTheme.colorScheme.error)
-                    Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = viewModel::loadBundle) {
                         Text("Retry")
                     }

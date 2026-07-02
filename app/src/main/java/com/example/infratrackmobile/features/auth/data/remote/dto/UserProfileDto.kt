@@ -8,6 +8,7 @@ data class UserProfileDto(
     val name: String,
     val email: String,
     val role: String,
-    val departmentId: Long,
-    val departmentName: String
+    val departmentId: Long? = null,
+    val departmentName: String? = null,
+    val enabled: Boolean
 )

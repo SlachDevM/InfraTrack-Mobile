@@ -5,5 +5,9 @@ import com.example.infratrackmobile.features.workorder.domain.model.WorkOrderBun
 data class WorkOrderDetailUiState(
     val bundle: WorkOrderBundle? = null,
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val isCompleting: Boolean = false,
+    val completeSuccess: Boolean = false,
+    val errorMessage: String? = null,
+    val completionNotes: String = "",
+    val showCompletionDialog: Boolean = false
 )

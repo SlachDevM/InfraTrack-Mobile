@@ -5,6 +5,7 @@ data class CurrentUser(
     val name: String,
     val email: String,
     val role: String,
-    val departmentId: Long,
-    val departmentName: String
+    val departmentId: Long?,
+    val departmentName: String?,
+    val enabled: Boolean
 )
