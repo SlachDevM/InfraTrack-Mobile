@@ -181,7 +181,14 @@ class InspectionDetailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true, errorMessage = null, saveSuccess = false)
             val answers = _uiState.value.editableAnswers.values.toList()
-            when (val result = saveInspectionAnswersUseCase(inspectionId, answers)) {
+            val result = saveInspectionAnswersUseCase(
+                inspectionId = inspectionId,
+                observedCondition = _uiState.value.observedCondition,
+                observations = _uiState.value.observations,
+                issueIdentified = _uiState.value.issueIdentified,
+                answers = answers
+            )
+            when (result) {
                 is Result.Success -> {
                     _uiState.value = _uiState.value.copy(isSaving = false, saveSuccess = true)
                     loadBundle() // Refresh to sync server state

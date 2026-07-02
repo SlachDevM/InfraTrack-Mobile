@@ -68,7 +68,7 @@ private fun WorkOrderDetailDto.toDomain() = WorkOrderDetail(
     status = status,
     priority = priority,
     description = description,
-    assignedTo = assignedTo
+    assignedToId = assignedToId ?: assignedTo
 )
 
 private fun WorkOrderAssetSummaryDto.toDomain() = WorkOrderAssetSummary(
@@ -93,12 +93,12 @@ private fun WorkOrderDecisionSummaryDto.toDomain() = WorkOrderDecisionSummary(
 private fun WorkOrderMaintenanceActivitySummaryDto.toDomain() = WorkOrderMaintenanceActivitySummary(
     maintenanceActivityId = maintenanceActivityId,
     status = status,
-    notes = notes,
+    completionNotes = completionNotes ?: notes,
     completedAt = completedAt
 )
 
 private fun WorkOrderAllowedActionsDto.toDomain() = WorkOrderAllowedActions(
-    canCompleteMaintenance = canCompleteMaintenance,
+    canCompleteMaintenance = canCompleteMaintenance ?: canComplete ?: false,
     canUploadDocument = canUploadDocument,
     canViewAsset = canViewAsset
 )

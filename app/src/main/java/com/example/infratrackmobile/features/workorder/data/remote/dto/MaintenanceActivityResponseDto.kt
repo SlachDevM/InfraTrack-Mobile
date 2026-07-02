@@ -9,10 +9,11 @@ data class MaintenanceActivityResponseDto(
     val assetId: Long,
     val assetName: String,
     val performedByUserId: Long,
-    val completionNotes: String,
+    val notes: String? = null,
+    val completionNotes: String? = null,
     val completedAt: String,
     val workOrderStatus: String,
     val completionReviewDecision: String? = null,
-    val createdAt: Long,
-    val updatedAt: Long
+    val createdAt: Long? = null,
+    val updatedAt: Long? = null
 )

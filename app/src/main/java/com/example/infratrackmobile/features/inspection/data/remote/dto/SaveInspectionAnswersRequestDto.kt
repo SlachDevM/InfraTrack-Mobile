@@ -4,6 +4,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class SaveInspectionAnswersRequestDto(
+    val observedCondition: String? = null,
+    val observations: String? = null,
+    val issueIdentified: Boolean? = null,
     val answers: List<InspectionAnswerRequestDto>
 )
 

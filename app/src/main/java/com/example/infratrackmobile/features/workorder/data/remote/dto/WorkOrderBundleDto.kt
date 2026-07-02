@@ -18,7 +18,8 @@ data class WorkOrderDetailDto(
     val status: String,
     val priority: String,
     val description: String,
-    val assignedTo: Long? = null
+    val assignedTo: Long? = null,
+    val assignedToId: Long? = null
 )
 
 @Serializable
@@ -47,13 +48,15 @@ data class WorkOrderDecisionSummaryDto(
 data class WorkOrderMaintenanceActivitySummaryDto(
     val maintenanceActivityId: Long,
     val status: String,
-    val notes: String,
+    val notes: String? = null,
+    val completionNotes: String? = null,
     val completedAt: String? = null
 )
 
 @Serializable
 data class WorkOrderAllowedActionsDto(
-    val canCompleteMaintenance: Boolean,
+    val canComplete: Boolean? = null,
+    val canCompleteMaintenance: Boolean? = null,
     val canUploadDocument: Boolean,
     val canViewAsset: Boolean
 )

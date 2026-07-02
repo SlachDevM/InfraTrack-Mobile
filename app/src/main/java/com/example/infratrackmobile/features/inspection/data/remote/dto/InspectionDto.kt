@@ -10,9 +10,9 @@ data class InspectionDto(
     val assetCategoryName: String,
     val status: String,
     val priority: String,
-    val expectedCompletionDate: String,
-    val templateId: Long,
-    val templateName: String,
+    val expectedCompletionDate: String? = null,
+    val templateId: Long? = null,
+    val templateName: String? = null,
     val hasChecklist: Boolean,
     val issueIdentified: Boolean
 )

@@ -14,7 +14,7 @@ data class WorkOrderDetail(
     val status: String,
     val priority: String,
     val description: String,
-    val assignedTo: Long?
+    val assignedToId: Long?
 )
 
 data class WorkOrderAssetSummary(
@@ -39,7 +39,7 @@ data class WorkOrderDecisionSummary(
 data class WorkOrderMaintenanceActivitySummary(
     val maintenanceActivityId: Long,
     val status: String,
-    val notes: String,
+    val completionNotes: String?,
     val completedAt: String?
 )
 

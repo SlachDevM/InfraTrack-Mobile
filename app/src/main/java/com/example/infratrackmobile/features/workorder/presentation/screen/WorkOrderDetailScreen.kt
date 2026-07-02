@@ -21,10 +21,17 @@ fun WorkOrderDetailScreen(
     viewModel: WorkOrderDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.completeSuccess) {
         if (uiState.completeSuccess) {
             onBackClick()
+        }
+    }
+
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
         }
     }
 
@@ -47,6 +54,7 @@ fun WorkOrderDetailScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Work Order Detail") },
@@ -168,7 +176,7 @@ private fun WorkOrderSummarySection(workOrder: WorkOrderDetail) {
             Text(text = workOrder.description, style = MaterialTheme.typography.bodyLarge)
             Text(text = "Status: ${workOrder.status}", style = MaterialTheme.typography.bodyMedium)
             Text(text = "Priority: ${workOrder.priority}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Assigned To ID: ${workOrder.assignedTo ?: "Unassigned"}", style = MaterialTheme.typography.bodySmall)
+            Text(text = "Assigned To ID: ${workOrder.assignedToId ?: "Unassigned"}", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -215,21 +223,21 @@ private fun MaintenanceActivitySection(
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (activity != null) {
                 Text(text = "Status: ${activity.status}", style = MaterialTheme.typography.bodyMedium)
-                Text(text = "Notes: ${activity.notes}", style = MaterialTheme.typography.bodySmall)
+                Text(text = "Notes: ${activity.completionNotes ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
                 Text(text = "Completed At: ${activity.completedAt ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
             } else {
                 Text(text = "No maintenance activity recorded.", style = MaterialTheme.typography.bodyMedium)
-                
-                if (canComplete) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = completionNotes,
-                        onValueChange = onNotesChange,
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Completion Notes *") },
-                        minLines = 3
-                    )
-                }
+            }
+
+            if (canComplete && (activity == null || activity.status != "COMPLETED")) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = completionNotes,
+                    onValueChange = onNotesChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Completion Notes *") },
+                    minLines = 3
+                )
             }
         }
     }

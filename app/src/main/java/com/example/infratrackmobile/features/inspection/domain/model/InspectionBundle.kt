@@ -13,7 +13,7 @@ data class InspectionSummary(
     val id: Long,
     val status: String,
     val priority: String,
-    val expectedCompletionDate: String,
+    val expectedCompletionDate: String? = null,
     val observedCondition: String?,
     val observations: String?,
     val issueIdentified: Boolean
@@ -30,7 +30,7 @@ data class AssetSummary(
 data class TemplateSummary(
     val id: Long,
     val name: String,
-    val version: String,
+    val version: Int,
     val status: String
 )
 

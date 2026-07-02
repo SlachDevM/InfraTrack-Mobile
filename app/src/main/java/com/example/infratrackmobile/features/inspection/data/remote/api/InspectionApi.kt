@@ -19,11 +19,11 @@ interface InspectionApi {
     @GET("api/mobile/inspections/{inspectionId}/bundle")
     suspend fun getInspectionBundle(@Path("inspectionId") inspectionId: Long): InspectionBundleDto
 
-    @PUT("api/inspections/{id}/answers")
-    suspend fun saveAnswers(
+    @PUT("api/inspections/{id}/progress")
+    suspend fun saveProgress(
         @Path("id") id: Long,
         @Body request: SaveInspectionAnswersRequestDto
-    ): List<InspectionAnswerResponseDto>
+    ): InspectionResponseDto
 
     @POST("api/inspections/{id}/complete")
     suspend fun completeInspection(

@@ -31,12 +31,21 @@ class InspectionRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun saveAnswers(inspectionId: Long, answers: List<InspectionAnswerInput>): Result<Unit> {
+    override suspend fun saveAnswers(
+        inspectionId: Long,
+        observedCondition: PhysicalCondition?,
+        observations: String?,
+        issueIdentified: Boolean?,
+        answers: List<InspectionAnswerInput>
+    ): Result<Unit> {
         return try {
             val request = SaveInspectionAnswersRequestDto(
+                observedCondition = observedCondition?.name,
+                observations = observations,
+                issueIdentified = issueIdentified,
                 answers = answers.map { it.toDto() }
             )
-            inspectionApi.saveAnswers(inspectionId, request)
+            inspectionApi.saveProgress(inspectionId, request)
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error(e.toNetworkError())

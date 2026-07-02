@@ -25,6 +25,10 @@ fun WorkOrderListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel.loadWorkOrders()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(

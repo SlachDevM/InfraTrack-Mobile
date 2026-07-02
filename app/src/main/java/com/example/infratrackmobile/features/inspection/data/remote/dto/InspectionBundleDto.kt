@@ -17,7 +17,7 @@ data class InspectionSummaryDto(
     val id: Long,
     val status: String,
     val priority: String,
-    val expectedCompletionDate: String,
+    val expectedCompletionDate: String? = null,
     val observedCondition: String? = null,
     val observations: String? = null,
     val issueIdentified: Boolean
@@ -36,7 +36,7 @@ data class AssetSummaryDto(
 data class TemplateSummaryDto(
     val id: Long,
     val name: String,
-    val version: String,
+    val version: Int,
     val status: String
 )
 

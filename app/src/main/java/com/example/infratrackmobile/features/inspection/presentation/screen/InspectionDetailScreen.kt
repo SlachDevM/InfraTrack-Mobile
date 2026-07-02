@@ -135,6 +135,8 @@ private fun InspectionBundleContent(
     onSaveClick: () -> Unit,
     onCompleteClick: () -> Unit
 ) {
+    val isReadOnly = bundle.inspection.status == "COMPLETED"
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -154,7 +156,8 @@ private fun InspectionBundleContent(
                 issueIdentified = issueIdentified,
                 onConditionChange = onConditionChange,
                 onObservationsChange = onObservationsChange,
-                onIssueIdentifiedChange = onIssueIdentifiedChange
+                onIssueIdentifiedChange = onIssueIdentifiedChange,
+                isReadOnly = isReadOnly
             )
         }
 
@@ -185,20 +188,23 @@ private fun InspectionBundleContent(
                     onBooleanChange = { onBooleanChange(question.id, it) },
                     onTextChange = { onTextChange(question.id, it) },
                     onNumberChange = { onNumberChange(question.id, it) },
-                    onChoiceChange = { onChoiceChange(question.id, it) }
+                    onChoiceChange = { onChoiceChange(question.id, it) },
+                    isReadOnly = isReadOnly
                 )
             }
         }
 
-        item {
-            SectionHeader("Actions")
-            AllowedActionsSection(
-                allowedActions = bundle.allowedActions,
-                isSaving = isSaving,
-                isCompleting = isCompleting,
-                onSaveClick = onSaveClick,
-                onCompleteClick = onCompleteClick
-            )
+        if (!isReadOnly) {
+            item {
+                SectionHeader("Actions")
+                AllowedActionsSection(
+                    allowedActions = bundle.allowedActions,
+                    isSaving = isSaving,
+                    isCompleting = isCompleting,
+                    onSaveClick = onSaveClick,
+                    onCompleteClick = onCompleteClick
+                )
+            }
         }
     }
 }
@@ -233,7 +239,8 @@ private fun InspectionSummarySection(
     issueIdentified: Boolean,
     onConditionChange: (PhysicalCondition) -> Unit,
     onObservationsChange: (String) -> Unit,
-    onIssueIdentifiedChange: (Boolean) -> Unit
+    onIssueIdentifiedChange: (Boolean) -> Unit,
+    isReadOnly: Boolean = false
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -248,7 +255,8 @@ private fun InspectionSummarySection(
             Text(text = "Observed Condition *", style = MaterialTheme.typography.labelSmall)
             ConditionSelector(
                 selectedCondition = observedCondition,
-                onConditionSelected = onConditionChange
+                onConditionSelected = onConditionChange,
+                enabled = !isReadOnly
             )
 
             OutlinedTextField(
@@ -256,13 +264,16 @@ private fun InspectionSummarySection(
                 onValueChange = onObservationsChange,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Observations *") },
-                minLines = 3
+                minLines = 3,
+                readOnly = isReadOnly,
+                enabled = !isReadOnly
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = issueIdentified,
-                    onCheckedChange = onIssueIdentifiedChange
+                    onCheckedChange = onIssueIdentifiedChange,
+                    enabled = !isReadOnly
                 )
                 Text(text = "Issue Identified", style = MaterialTheme.typography.bodyMedium)
             }
@@ -273,7 +284,8 @@ private fun InspectionSummarySection(
 @Composable
 private fun ConditionSelector(
     selectedCondition: PhysicalCondition?,
-    onConditionSelected: (PhysicalCondition) -> Unit
+    onConditionSelected: (PhysicalCondition) -> Unit,
+    enabled: Boolean = true
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -289,7 +301,8 @@ private fun ConditionSelector(
                         style = MaterialTheme.typography.labelSmall
                     ) 
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                enabled = enabled
             )
         }
     }
@@ -302,13 +315,14 @@ private fun QuestionItem(
     onBooleanChange: (Boolean) -> Unit,
     onTextChange: (String) -> Unit,
     onNumberChange: (String) -> Unit,
-    onChoiceChange: (String) -> Unit
+    onChoiceChange: (String) -> Unit,
+    isReadOnly: Boolean = false
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row {
                 Text(text = question.questionText, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                if (question.required) {
+                if (question.required && !isReadOnly) {
                     Text(text = "*", color = MaterialTheme.colorScheme.error)
                 }
             }
@@ -322,7 +336,8 @@ private fun QuestionItem(
                 "BOOLEAN" -> {
                     BooleanAnswerSelector(
                         value = answer?.booleanValue,
-                        onValueChange = onBooleanChange
+                        onValueChange = onBooleanChange,
+                        enabled = !isReadOnly
                     )
                 }
                 "TEXT" -> {
@@ -330,7 +345,9 @@ private fun QuestionItem(
                         value = answer?.textValue ?: "",
                         onValueChange = onTextChange,
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Your answer") }
+                        label = { Text("Your answer") },
+                        readOnly = isReadOnly,
+                        enabled = !isReadOnly
                     )
                 }
                 "NUMBER" -> {
@@ -339,14 +356,17 @@ private fun QuestionItem(
                         onValueChange = onNumberChange,
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Value ${question.unitSymbol ?: ""}") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        readOnly = isReadOnly,
+                        enabled = !isReadOnly
                     )
                 }
                 "CHOICE" -> {
                     ChoiceAnswerSelector(
                         selectedCode = answer?.choiceCodeValue,
                         choices = question.choices,
-                        onChoiceSelected = onChoiceChange
+                        onChoiceSelected = onChoiceChange,
+                        enabled = !isReadOnly
                     )
                 }
             }
@@ -357,18 +377,21 @@ private fun QuestionItem(
 @Composable
 private fun BooleanAnswerSelector(
     value: Boolean?,
-    onValueChange: (Boolean) -> Unit
+    onValueChange: (Boolean) -> Unit,
+    enabled: Boolean = true
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         FilterChip(
             selected = value == true,
             onClick = { onValueChange(true) },
-            label = { Text("Yes") }
+            label = { Text("Yes") },
+            enabled = enabled
         )
         FilterChip(
             selected = value == false,
             onClick = { onValueChange(false) },
-            label = { Text("No") }
+            label = { Text("No") },
+            enabled = enabled
         )
     }
 }
@@ -377,14 +400,16 @@ private fun BooleanAnswerSelector(
 private fun ChoiceAnswerSelector(
     selectedCode: String?,
     choices: List<InspectionChoice>,
-    onChoiceSelected: (String) -> Unit
+    onChoiceSelected: (String) -> Unit,
+    enabled: Boolean = true
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         choices.forEach { choice ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
                     selected = choice.code == selectedCode,
-                    onClick = { onChoiceSelected(choice.code) }
+                    onClick = { onChoiceSelected(choice.code) },
+                    enabled = enabled
                 )
                 Text(text = choice.label, style = MaterialTheme.typography.bodyMedium)
             }
