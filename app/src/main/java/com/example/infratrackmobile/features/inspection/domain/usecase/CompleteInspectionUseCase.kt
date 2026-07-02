@@ -4,7 +4,6 @@ import com.example.infratrackmobile.core.common.Result
 import com.example.infratrackmobile.features.inspection.data.repository.InspectionRepository
 import com.example.infratrackmobile.features.inspection.domain.model.InspectionAnswerInput
 import com.example.infratrackmobile.features.inspection.domain.model.PhysicalCondition
-import java.time.LocalDateTime
 import javax.inject.Inject
 
 class CompleteInspectionUseCase @Inject constructor(
@@ -22,7 +21,6 @@ class CompleteInspectionUseCase @Inject constructor(
             observedCondition = observedCondition,
             observations = observations,
             issueIdentified = issueIdentified,
-            completedAt = LocalDateTime.now(),
             answers = answers
         )
     }

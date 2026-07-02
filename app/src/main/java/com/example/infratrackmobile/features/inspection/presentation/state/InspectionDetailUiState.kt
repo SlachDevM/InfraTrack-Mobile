@@ -16,5 +16,7 @@ data class InspectionDetailUiState(
     val observedCondition: PhysicalCondition? = null,
     val observations: String = "",
     val issueIdentified: Boolean = false,
-    val showCompletionDialog: Boolean = false
+    val showCompletionDialog: Boolean = false,
+    val showDiscardDialog: Boolean = false,
+    val isDirty: Boolean = false
 )

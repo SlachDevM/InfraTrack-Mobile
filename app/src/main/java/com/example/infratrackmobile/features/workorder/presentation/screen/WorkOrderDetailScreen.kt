@@ -1,16 +1,22 @@
 package com.example.infratrackmobile.features.workorder.presentation.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.infratrackmobile.core.ui.util.DisplayFormatter
 import com.example.infratrackmobile.features.workorder.domain.model.*
 import com.example.infratrackmobile.features.workorder.presentation.viewmodel.WorkOrderDetailViewModel
 
@@ -22,10 +28,20 @@ fun WorkOrderDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val focusManager = LocalFocusManager.current
+
+    val navigateBack = {
+        focusManager.clearFocus()
+        onBackClick()
+    }
+
+    BackHandler(enabled = uiState.isDirty) {
+        viewModel.showDiscardDialog()
+    }
 
     LaunchedEffect(uiState.completeSuccess) {
         if (uiState.completeSuccess) {
-            onBackClick()
+            navigateBack()
         }
     }
 
@@ -35,13 +51,34 @@ fun WorkOrderDetailScreen(
         }
     }
 
+    if (uiState.showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = viewModel::hideDiscardDialog,
+            title = { Text("Discard changes?") },
+            text = { Text("You have unsaved changes. Are you sure you want to discard them?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.hideDiscardDialog()
+                    navigateBack()
+                }) {
+                    Text("Discard", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::hideDiscardDialog) {
+                    Text("Continue Editing")
+                }
+            }
+        )
+    }
+
     if (uiState.showCompletionDialog) {
         AlertDialog(
             onDismissRequest = viewModel::hideCompletionDialog,
             title = { Text("Complete Maintenance") },
             text = { Text("Are you sure you want to record this maintenance as completed? This action is final.") },
             confirmButton = {
-                TextButton(onClick = viewModel::completeMaintenance) {
+                Button(onClick = viewModel::completeMaintenance) {
                     Text("Complete")
                 }
             },
@@ -59,7 +96,9 @@ fun WorkOrderDetailScreen(
             TopAppBar(
                 title = { Text("Work Order Detail") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = {
+                        if (uiState.isDirty) viewModel.showDiscardDialog() else navigateBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -93,7 +132,8 @@ fun WorkOrderDetailScreen(
                         completionNotes = uiState.completionNotes,
                         isCompleting = uiState.isCompleting,
                         onNotesChange = viewModel::updateCompletionNotes,
-                        onCompleteClick = viewModel::showCompletionDialog
+                        onCompleteClick = viewModel::showCompletionDialog,
+                        focusManager = focusManager
                     )
                 }
             }
@@ -107,7 +147,8 @@ private fun WorkOrderBundleContent(
     completionNotes: String,
     isCompleting: Boolean,
     onNotesChange: (String) -> Unit,
-    onCompleteClick: () -> Unit
+    onCompleteClick: () -> Unit,
+    focusManager: androidx.compose.ui.focus.FocusManager
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -144,7 +185,8 @@ private fun WorkOrderBundleContent(
                 activity = bundle.maintenanceActivity,
                 completionNotes = completionNotes,
                 onNotesChange = onNotesChange,
-                canComplete = bundle.allowedActions.canCompleteMaintenance
+                canComplete = bundle.allowedActions.canCompleteMaintenance,
+                focusManager = focusManager
             )
         }
 
@@ -174,9 +216,26 @@ private fun WorkOrderSummarySection(workOrder: WorkOrderDetail) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(text = workOrder.description, style = MaterialTheme.typography.bodyLarge)
-            Text(text = "Status: ${workOrder.status}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Priority: ${workOrder.priority}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Assigned To ID: ${workOrder.assignedToId ?: "Unassigned"}", style = MaterialTheme.typography.bodySmall)
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text(text = "Status", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Text(text = DisplayFormatter.toLabel(workOrder.status), style = MaterialTheme.typography.bodyMedium)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(text = "Priority", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Text(
+                        text = DisplayFormatter.toLabel(workOrder.priority),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (workOrder.priority == "URGENT" || workOrder.priority == "HIGH") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+            
+            if (workOrder.assignedToId != null) {
+                Text(text = "Assigned To", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                Text(text = "Employee ID: ${workOrder.assignedToId}", style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }
@@ -195,9 +254,24 @@ private fun AssetSummarySection(asset: WorkOrderAssetSummary) {
 
 @Composable
 private fun IssueSummarySection(issue: WorkOrderIssueSummary) {
+    val severityColor = when (issue.issueSeverity.uppercase()) {
+        "CRITICAL", "HIGH" -> MaterialTheme.colorScheme.error
+        "MEDIUM" -> androidx.compose.ui.graphics.Color(0xFFEF6C00)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(text = "Severity: ${issue.issueSeverity}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "Severity", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.weight(1f))
+                Text(
+                    text = DisplayFormatter.toLabel(issue.issueSeverity),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = severityColor,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Text(text = "Description", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
             Text(text = issue.issueDescription, style = MaterialTheme.typography.bodySmall)
         }
     }
@@ -206,8 +280,9 @@ private fun IssueSummarySection(issue: WorkOrderIssueSummary) {
 @Composable
 private fun DecisionSummarySection(decision: WorkOrderDecisionSummary) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Decision Type: ${decision.decisionType}", style = MaterialTheme.typography.bodyMedium)
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(text = "Decision Type", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+            Text(text = DisplayFormatter.toLabel(decision.decisionType), style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
@@ -217,16 +292,24 @@ private fun MaintenanceActivitySection(
     activity: WorkOrderMaintenanceActivitySummary?,
     completionNotes: String,
     onNotesChange: (String) -> Unit,
-    canComplete: Boolean
+    canComplete: Boolean,
+    focusManager: androidx.compose.ui.focus.FocusManager
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (activity != null) {
-                Text(text = "Status: ${activity.status}", style = MaterialTheme.typography.bodyMedium)
-                Text(text = "Notes: ${activity.completionNotes ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
-                Text(text = "Completed At: ${activity.completedAt ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "Activity Status", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.weight(1f))
+                    Text(text = DisplayFormatter.toLabel(activity.status), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                }
+                
+                Text(text = "Completion Notes", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                Text(text = DisplayFormatter.orNotAvailable(activity.completionNotes), style = MaterialTheme.typography.bodySmall)
+                
+                Text(text = "Completed At", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                Text(text = DisplayFormatter.formatDateTime(activity.completedAt), style = MaterialTheme.typography.bodySmall)
             } else {
-                Text(text = "No maintenance activity recorded.", style = MaterialTheme.typography.bodyMedium)
+                Text(text = "No maintenance activity recorded.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
             }
 
             if (canComplete && (activity == null || activity.status != "COMPLETED")) {
@@ -236,7 +319,9 @@ private fun MaintenanceActivitySection(
                     onValueChange = onNotesChange,
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Completion Notes *") },
-                    minLines = 3
+                    minLines = 3,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                 )
             }
         }

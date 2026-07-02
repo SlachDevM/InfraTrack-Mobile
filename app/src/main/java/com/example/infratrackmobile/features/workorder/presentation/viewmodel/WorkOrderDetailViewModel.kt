@@ -64,7 +64,7 @@ class WorkOrderDetailViewModel @Inject constructor(
     }
 
     fun updateCompletionNotes(notes: String) {
-        _uiState.value = _uiState.value.copy(completionNotes = notes)
+        _uiState.value = _uiState.value.copy(completionNotes = notes, isDirty = true)
     }
 
     fun showCompletionDialog() {
@@ -73,6 +73,14 @@ class WorkOrderDetailViewModel @Inject constructor(
 
     fun hideCompletionDialog() {
         _uiState.value = _uiState.value.copy(showCompletionDialog = false)
+    }
+
+    fun showDiscardDialog() {
+        _uiState.value = _uiState.value.copy(showDiscardDialog = true)
+    }
+
+    fun hideDiscardDialog() {
+        _uiState.value = _uiState.value.copy(showDiscardDialog = false)
     }
 
     fun completeMaintenance() {
@@ -98,7 +106,11 @@ class WorkOrderDetailViewModel @Inject constructor(
 
             when (result) {
                 is Result.Success -> {
-                    _uiState.value = _uiState.value.copy(isCompleting = false, completeSuccess = true)
+                    _uiState.value = _uiState.value.copy(
+                        isCompleting = false, 
+                        completeSuccess = true,
+                        isDirty = false
+                    )
                 }
                 is Result.Error -> {
                     _uiState.value = _uiState.value.copy(

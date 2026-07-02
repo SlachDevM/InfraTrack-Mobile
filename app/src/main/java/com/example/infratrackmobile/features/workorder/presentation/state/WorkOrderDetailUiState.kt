@@ -9,5 +9,7 @@ data class WorkOrderDetailUiState(
     val completeSuccess: Boolean = false,
     val errorMessage: String? = null,
     val completionNotes: String = "",
-    val showCompletionDialog: Boolean = false
+    val showCompletionDialog: Boolean = false,
+    val showDiscardDialog: Boolean = false,
+    val isDirty: Boolean = false
 )

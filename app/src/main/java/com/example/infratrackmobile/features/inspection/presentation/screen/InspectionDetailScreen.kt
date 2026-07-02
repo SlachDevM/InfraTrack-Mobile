@@ -1,19 +1,24 @@
 package com.example.infratrackmobile.features.inspection.presentation.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.infratrackmobile.core.ui.util.DisplayFormatter
 import com.example.infratrackmobile.features.inspection.domain.model.*
 import com.example.infratrackmobile.features.inspection.presentation.viewmodel.InspectionDetailViewModel
 
@@ -25,27 +30,58 @@ fun InspectionDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val focusManager = LocalFocusManager.current
+
+    val navigateBack = {
+        focusManager.clearFocus()
+        onBackClick()
+    }
+
+    BackHandler(enabled = uiState.isDirty) {
+        viewModel.showDiscardDialog()
+    }
 
     LaunchedEffect(uiState.saveSuccess) {
         if (uiState.saveSuccess) {
-            snackbarHostState.showSnackbar("Answers saved successfully")
+            snackbarHostState.showSnackbar("Progress saved")
             viewModel.clearSaveSuccess()
         }
     }
 
     LaunchedEffect(uiState.completeSuccess) {
         if (uiState.completeSuccess) {
-            onBackClick()
+            navigateBack()
         }
+    }
+
+    if (uiState.showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = viewModel::hideDiscardDialog,
+            title = { Text("Discard changes?") },
+            text = { Text("You have unsaved changes. Are you sure you want to discard them?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.hideDiscardDialog()
+                    navigateBack()
+                }) {
+                    Text("Discard", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::hideDiscardDialog) {
+                    Text("Continue Editing")
+                }
+            }
+        )
     }
 
     if (uiState.showCompletionDialog) {
         AlertDialog(
             onDismissRequest = viewModel::hideCompletionDialog,
             title = { Text("Complete Inspection") },
-            text = { Text("Are you sure you want to complete this inspection? This action is final for this step.") },
+            text = { Text("Are you sure you want to complete this inspection? This action is final.") },
             confirmButton = {
-                TextButton(onClick = viewModel::completeInspection) {
+                Button(onClick = viewModel::completeInspection) {
                     Text("Complete")
                 }
             },
@@ -63,7 +99,9 @@ fun InspectionDetailScreen(
             TopAppBar(
                 title = { Text("Inspection Detail") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = {
+                        if (uiState.isDirty) viewModel.showDiscardDialog() else navigateBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -108,7 +146,8 @@ fun InspectionDetailScreen(
                         onObservationsChange = viewModel::updateObservations,
                         onIssueIdentifiedChange = viewModel::updateIssueIdentified,
                         onSaveClick = viewModel::saveAnswers,
-                        onCompleteClick = viewModel::showCompletionDialog
+                        onCompleteClick = viewModel::showCompletionDialog,
+                        focusManager = focusManager
                     )
                 }
             }
@@ -133,7 +172,8 @@ private fun InspectionBundleContent(
     onObservationsChange: (String) -> Unit,
     onIssueIdentifiedChange: (Boolean) -> Unit,
     onSaveClick: () -> Unit,
-    onCompleteClick: () -> Unit
+    onCompleteClick: () -> Unit,
+    focusManager: androidx.compose.ui.focus.FocusManager
 ) {
     val isReadOnly = bundle.inspection.status == "COMPLETED"
 
@@ -157,7 +197,8 @@ private fun InspectionBundleContent(
                 onConditionChange = onConditionChange,
                 onObservationsChange = onObservationsChange,
                 onIssueIdentifiedChange = onIssueIdentifiedChange,
-                isReadOnly = isReadOnly
+                isReadOnly = isReadOnly,
+                focusManager = focusManager
             )
         }
 
@@ -240,13 +281,24 @@ private fun InspectionSummarySection(
     onConditionChange: (PhysicalCondition) -> Unit,
     onObservationsChange: (String) -> Unit,
     onIssueIdentifiedChange: (Boolean) -> Unit,
-    isReadOnly: Boolean = false
+    isReadOnly: Boolean = false,
+    focusManager: androidx.compose.ui.focus.FocusManager
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(text = "Status: ${inspection.status}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Priority: ${inspection.priority}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Expected: ${inspection.expectedCompletionDate}", style = MaterialTheme.typography.bodyMedium)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text(text = "Status", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Text(text = DisplayFormatter.toLabel(inspection.status), style = MaterialTheme.typography.bodyMedium)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(text = "Priority", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Text(text = DisplayFormatter.toLabel(inspection.priority), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            
+            Text(text = "Expected Completion", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+            Text(text = DisplayFormatter.formatDate(inspection.expectedCompletionDate), style = MaterialTheme.typography.bodyMedium)
             
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             
@@ -259,23 +311,39 @@ private fun InspectionSummarySection(
                 enabled = !isReadOnly
             )
 
-            OutlinedTextField(
-                value = observations,
-                onValueChange = onObservationsChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Observations *") },
-                minLines = 3,
-                readOnly = isReadOnly,
-                enabled = !isReadOnly
-            )
+            if (isReadOnly) {
+                Text(text = "Observations", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                Text(
+                    text = DisplayFormatter.orNotAvailable(observations),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            } else {
+                OutlinedTextField(
+                    value = observations,
+                    onValueChange = onObservationsChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Observations *") },
+                    minLines = 3,
+                    enabled = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+                )
+            }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = issueIdentified,
-                    onCheckedChange = onIssueIdentifiedChange,
-                    enabled = !isReadOnly
-                )
-                Text(text = "Issue Identified", style = MaterialTheme.typography.bodyMedium)
+                if (isReadOnly) {
+                    Text(
+                        text = if (issueIdentified) "⚠️ Issue Identified" else "✅ No Issue Identified",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (issueIdentified) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    Checkbox(
+                        checked = issueIdentified,
+                        onCheckedChange = onIssueIdentifiedChange
+                    )
+                    Text(text = "Issue Identified", style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
     }
@@ -297,7 +365,7 @@ private fun ConditionSelector(
                 onClick = { onConditionSelected(condition) },
                 label = { 
                     Text(
-                        text = condition.name,
+                        text = DisplayFormatter.toLabel(condition.name),
                         style = MaterialTheme.typography.labelSmall
                     ) 
                 },
@@ -347,7 +415,8 @@ private fun QuestionItem(
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Your answer") },
                         readOnly = isReadOnly,
-                        enabled = !isReadOnly
+                        enabled = !isReadOnly,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
                     )
                 }
                 "NUMBER" -> {
@@ -356,7 +425,7 @@ private fun QuestionItem(
                         onValueChange = onNumberChange,
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Value ${question.unitSymbol ?: ""}") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                         readOnly = isReadOnly,
                         enabled = !isReadOnly
                     )

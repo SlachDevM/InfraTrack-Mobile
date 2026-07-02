@@ -5,8 +5,6 @@ import com.example.infratrackmobile.core.network.toNetworkError
 import com.example.infratrackmobile.features.inspection.data.remote.api.InspectionApi
 import com.example.infratrackmobile.features.inspection.data.remote.dto.*
 import com.example.infratrackmobile.features.inspection.domain.model.*
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class InspectionRepositoryImpl @Inject constructor(
@@ -57,7 +55,6 @@ class InspectionRepositoryImpl @Inject constructor(
         observedCondition: PhysicalCondition,
         observations: String,
         issueIdentified: Boolean,
-        completedAt: LocalDateTime,
         answers: List<InspectionAnswerInput>
     ): Result<Unit> {
         return try {
@@ -65,7 +62,6 @@ class InspectionRepositoryImpl @Inject constructor(
                 observedCondition = observedCondition.name,
                 observations = observations,
                 issueIdentified = issueIdentified,
-                completedAt = completedAt.format(DateTimeFormatter.ISO_DATE_TIME),
                 answers = answers.map { it.toDto() }
             )
             inspectionApi.completeInspection(inspectionId, request)

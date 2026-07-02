@@ -5,7 +5,6 @@ import com.example.infratrackmobile.core.network.toNetworkError
 import com.example.infratrackmobile.features.workorder.data.remote.api.WorkOrderApi
 import com.example.infratrackmobile.features.workorder.data.remote.dto.*
 import com.example.infratrackmobile.features.workorder.domain.model.*
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class WorkOrderRepositoryImpl @Inject constructor(
@@ -33,8 +32,7 @@ class WorkOrderRepositoryImpl @Inject constructor(
     override suspend fun completeMaintenance(id: Long, input: CompleteMaintenanceInput): Result<Unit> {
         return try {
             val request = CompleteMaintenanceRequestDto(
-                completionNotes = input.completionNotes,
-                completedAt = input.completedAt.format(DateTimeFormatter.ISO_DATE_TIME)
+                completionNotes = input.completionNotes
             )
             workOrderApi.completeMaintenance(id, request)
             Result.Success(Unit)

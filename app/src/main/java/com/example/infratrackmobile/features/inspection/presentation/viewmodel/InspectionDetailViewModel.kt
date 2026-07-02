@@ -84,38 +84,38 @@ class InspectionDetailViewModel @Inject constructor(
     fun updateBooleanAnswer(questionId: Long, value: Boolean) {
         val currentAnswers = _uiState.value.editableAnswers.toMutableMap()
         currentAnswers[questionId] = InspectionAnswerInput(questionId = questionId, booleanValue = value)
-        _uiState.value = _uiState.value.copy(editableAnswers = currentAnswers)
+        _uiState.value = _uiState.value.copy(editableAnswers = currentAnswers, isDirty = true)
     }
 
     fun updateTextAnswer(questionId: Long, value: String) {
         val currentAnswers = _uiState.value.editableAnswers.toMutableMap()
         currentAnswers[questionId] = InspectionAnswerInput(questionId = questionId, textValue = value)
-        _uiState.value = _uiState.value.copy(editableAnswers = currentAnswers)
+        _uiState.value = _uiState.value.copy(editableAnswers = currentAnswers, isDirty = true)
     }
 
     fun updateNumberAnswer(questionId: Long, value: String) {
         val numberValue = value.toDoubleOrNull()
         val currentAnswers = _uiState.value.editableAnswers.toMutableMap()
         currentAnswers[questionId] = InspectionAnswerInput(questionId = questionId, numberValue = numberValue)
-        _uiState.value = _uiState.value.copy(editableAnswers = currentAnswers)
+        _uiState.value = _uiState.value.copy(editableAnswers = currentAnswers, isDirty = true)
     }
 
     fun updateChoiceAnswer(questionId: Long, choiceCode: String) {
         val currentAnswers = _uiState.value.editableAnswers.toMutableMap()
         currentAnswers[questionId] = InspectionAnswerInput(questionId = questionId, choiceCodeValue = choiceCode)
-        _uiState.value = _uiState.value.copy(editableAnswers = currentAnswers)
+        _uiState.value = _uiState.value.copy(editableAnswers = currentAnswers, isDirty = true)
     }
 
     fun updateObservedCondition(condition: PhysicalCondition) {
-        _uiState.value = _uiState.value.copy(observedCondition = condition)
+        _uiState.value = _uiState.value.copy(observedCondition = condition, isDirty = true)
     }
 
     fun updateObservations(observations: String) {
-        _uiState.value = _uiState.value.copy(observations = observations)
+        _uiState.value = _uiState.value.copy(observations = observations, isDirty = true)
     }
 
     fun updateIssueIdentified(issueIdentified: Boolean) {
-        _uiState.value = _uiState.value.copy(issueIdentified = issueIdentified)
+        _uiState.value = _uiState.value.copy(issueIdentified = issueIdentified, isDirty = true)
     }
 
     fun showCompletionDialog() {
@@ -126,6 +126,14 @@ class InspectionDetailViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(showCompletionDialog = false)
     }
 
+    fun showDiscardDialog() {
+        _uiState.value = _uiState.value.copy(showDiscardDialog = true)
+    }
+
+    fun hideDiscardDialog() {
+        _uiState.value = _uiState.value.copy(showDiscardDialog = false)
+    }
+
     fun completeInspection() {
         val condition = _uiState.value.observedCondition
         val observations = _uiState.value.observations
@@ -133,7 +141,7 @@ class InspectionDetailViewModel @Inject constructor(
         if (condition == null) {
             _uiState.value = _uiState.value.copy(
                 showCompletionDialog = false,
-                errorMessage = "Physical condition is required"
+                errorMessage = "Please select the observed condition"
             )
             return
         }
@@ -164,7 +172,11 @@ class InspectionDetailViewModel @Inject constructor(
 
             when (result) {
                 is Result.Success -> {
-                    _uiState.value = _uiState.value.copy(isCompleting = false, completeSuccess = true)
+                    _uiState.value = _uiState.value.copy(
+                        isCompleting = false, 
+                        completeSuccess = true,
+                        isDirty = false
+                    )
                 }
                 is Result.Error -> {
                     _uiState.value = _uiState.value.copy(
@@ -190,7 +202,11 @@ class InspectionDetailViewModel @Inject constructor(
             )
             when (result) {
                 is Result.Success -> {
-                    _uiState.value = _uiState.value.copy(isSaving = false, saveSuccess = true)
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false, 
+                        saveSuccess = true,
+                        isDirty = false
+                    )
                     loadBundle() // Refresh to sync server state
                 }
                 is Result.Error -> {

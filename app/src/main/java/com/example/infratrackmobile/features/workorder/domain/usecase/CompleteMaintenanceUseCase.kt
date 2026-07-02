@@ -3,7 +3,6 @@ package com.example.infratrackmobile.features.workorder.domain.usecase
 import com.example.infratrackmobile.core.common.Result
 import com.example.infratrackmobile.features.workorder.data.repository.WorkOrderRepository
 import com.example.infratrackmobile.features.workorder.domain.model.CompleteMaintenanceInput
-import java.time.LocalDateTime
 import javax.inject.Inject
 
 class CompleteMaintenanceUseCase @Inject constructor(
@@ -11,8 +10,7 @@ class CompleteMaintenanceUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(workOrderId: Long, notes: String): Result<Unit> {
         val input = CompleteMaintenanceInput(
-            completionNotes = notes,
-            completedAt = LocalDateTime.now()
+            completionNotes = notes
         )
         return repository.completeMaintenance(workOrderId, input)
     }

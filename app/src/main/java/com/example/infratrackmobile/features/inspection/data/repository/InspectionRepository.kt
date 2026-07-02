@@ -5,7 +5,6 @@ import com.example.infratrackmobile.features.inspection.domain.model.AssignedIns
 import com.example.infratrackmobile.features.inspection.domain.model.InspectionAnswerInput
 import com.example.infratrackmobile.features.inspection.domain.model.InspectionBundle
 import com.example.infratrackmobile.features.inspection.domain.model.PhysicalCondition
-import java.time.LocalDateTime
 
 interface InspectionRepository {
     suspend fun getAssignedInspections(): Result<List<AssignedInspection>>
@@ -22,7 +21,6 @@ interface InspectionRepository {
         observedCondition: PhysicalCondition,
         observations: String,
         issueIdentified: Boolean,
-        completedAt: LocalDateTime,
         answers: List<InspectionAnswerInput>
     ): Result<Unit>
 }

@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.infratrackmobile.core.ui.util.DisplayFormatter
 import com.example.infratrackmobile.features.auth.presentation.viewmodel.ProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,8 +35,11 @@ fun ProfileScreen(
             title = { Text("Logout") },
             text = { Text("Are you sure you want to logout? You will need to login again to access the application.") },
             confirmButton = {
-                TextButton(onClick = viewModel::logout) {
-                    Text("Logout", color = MaterialTheme.colorScheme.error)
+                Button(
+                    onClick = viewModel::logout,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Logout")
                 }
             },
             dismissButton = {
@@ -93,14 +97,16 @@ fun ProfileScreen(
                         ) {
                             ProfileItem(label = "Name", value = user.name)
                             ProfileItem(label = "Email", value = user.email)
-                            ProfileItem(label = "Role", value = user.role)
+                            ProfileItem(label = "Role", value = DisplayFormatter.toLabel(user.role))
                         }
 
-                        ProfileSection(
-                            title = "Department",
-                            icon = Icons.Default.Info
-                        ) {
-                            ProfileItem(label = "Name", value = user.departmentName ?: "No Department")
+                        if (!user.departmentName.isNullOrBlank()) {
+                            ProfileSection(
+                                title = "Department",
+                                icon = Icons.Default.Info
+                            ) {
+                                ProfileItem(label = "Name", value = user.departmentName)
+                            }
                         }
 
                         ProfileSection(
